@@ -10,28 +10,28 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: "3.10"
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
       - name: Install deps
         run: |
           sudo apt-get update
-          sudo apt-get install -y git zip unzip openjdk-17-jdk autoconf libtool pkg-config zlib1g-dev libncurses5-dev libncursesw5-dev libtinfo5 cmake libffi-dev libssl-dev
+          sudo apt-get install -y git zip unzip autoconf libtool pkg-config zlib1g-dev libncurses5-dev libncursesw5-dev libtinfo5 cmake libffi-dev libssl-dev
           pip install --upgrade pip cython==0.29.36 buildozer
       - name: Build
         run: |
           set -o pipefail
+          java -version
           buildozer -v android debug 2>&1 | tee build.log
       - name: Show real error
         if: failure()
         run: |
-          grep -n -E "error:|Error [0-9]|FAILED|fatal error|Traceback|No matching|ModuleNotFound|Command failed" build.log | grep -v "DEF" | head -40
-          echo "=== last lines before env dump ==="
-          grep -n "# Command failed" build.log | head -1
-      - name: Upload log
-        if: failure()
-        uses: actions/upload-artifact@v4
-        with:
-          name: build-log
-          path: build.log
+          grep -n -A12 "What went wrong" build.log | head -40
       - uses: actions/upload-artifact@v4
+        if: always()
         with:
           name: tg-cleaner-apk
-          path: bin/*.apk
+          path: |
+            bin/*.apk
+            build.log
